@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blackjack - The Parthenon Casino</title>
+    <script>
+        // Check if the page was refreshed
+        if (performance.navigation.type === performance.navigation.TYPE_RELOAD) {
+            window.location.replace('home.html');
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="game-pages.css">
+</head>
+<body>
+    <div class="coin-tab">
+        <span class="coin-icon">🪙</span>
+        <span class="coin-balance">0</span>
+    </div>
+
+    <div class="game-page-container" style="position:relative;">
+        <header class="game-header">
+            <a href="home.html" class="back-button">← Back to Games</a>
+            <h1>Blackjack</h1>
+            <div class="balance-container">
+                <span class="balance-label">Balance:</span>
+                <span class="balance-amount">0</span>
+                <span class="currency">🪙</span>
+            </div>
+        </header>
+
+        <main class="game-content">
+            <div class="game-container">
+                <div class="blackjack-table">
+                    <h2>Blackjack</h2>
+                    <div class="dealer-area">
+                        <h3>Dealer</h3>
+                        <div class="dealer-row">
+                            <div class="cards-area"><div class="dealer-cards"></div></div>
+                            <div class="deck"></div>
+                        </div>
+                    </div>
+                    <div class="player-area">
+                        <h3>Player</h3>
+                        <div class="cards-area"><div class="player-cards"></div></div>
+                    </div>
+                    <div class="game-controls">
+                        <div class="card-action-row">
+                            <button class="hit-btn" disabled>Hit</button>
+                            <button class="stand-btn" disabled>Stand</button>
+                            <button class="split-btn" disabled>Split</button>
+                        </div>
+                        <button class="bet-btn">Place Bet</button>
+                        <div class="bet-amount">
+                            <input type="number" class="current-bet" value="10" step="10" min="1">
+                            <button class="bet-2x">2x</button>
+                            <button class="bet-3x">3x</button>
+                            <button class="bet-half">/2</button>
+                            <button class="bet-max">Max</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="notification" style="display:none;"></div>
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+    
+    <!-- Firebase Configuration -->
+    <script src="firebase-config.js"></script>
+    
+    <!-- Main Application Script -->
+    <script src="script.js"></script>
+</body>
+</html> 
