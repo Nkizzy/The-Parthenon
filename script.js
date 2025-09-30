@@ -201,13 +201,16 @@ class CasinoAuth {
             const q = query(
                 collection(this.db, 'users'),
                 orderBy('balance', 'desc'),
-                limit(limitCount)
+                limit(limitCount + 10)
             );
             const querySnapshot = await getDocs(q);
-            return querySnapshot.docs.map(doc => ({
+            const players = querySnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             }));
+            // Exclude admin account from appearing on the leaderboard
+            const filtered = players.filter(player => (player.email || '').toLowerCase() !== 'noah@nick.com');
+            return filtered.slice(0, limitCount);
         } catch (error) {
             console.error('Error getting leaderboard:', error);
             return [];
