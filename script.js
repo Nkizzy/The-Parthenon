@@ -174,6 +174,7 @@ class CasinoAuth {
             });
 
             await batch.commit();
+            console.log('Balance history saved successfully for user:', this.currentUser.uid, 'balance:', balance);
         } catch (error) {
             console.error('Error saving user balance:', error);
         }
@@ -3261,6 +3262,73 @@ let chartTooltip = null;
 let tooltipChart = null;
 let tooltipTimeout = null;
 
+// Function to force refresh balance history data
+window.refreshBalanceHistory = async function() {
+    console.log('Forcing refresh of balance history data...');
+    
+    // Clear any existing chart
+    if (tooltipChart) {
+        tooltipChart.destroy();
+        tooltipChart = null;
+    }
+    
+    // Hide any existing tooltip
+    const tooltip = document.getElementById('chart-tooltip');
+    if (tooltip) {
+        tooltip.classList.add('hidden');
+    }
+    
+    console.log('Balance history cache cleared. Try hovering over a player again.');
+};
+
+// Test function to manually trigger balance changes and verify history saving
+window.testBalanceHistory = async function() {
+    console.log('Testing balance history functionality...');
+    
+    // Check if user is logged in
+    if (!window.casinoAuth || !window.casinoAuth.isUserLoggedIn()) {
+        console.log('User not logged in. Please log in first.');
+        return;
+    }
+    
+    console.log('User is logged in:', window.casinoAuth.currentUser.email);
+    
+    // Get current balance
+    const currentBalance = CasinoBalance.getBalance();
+    console.log('Current balance:', currentBalance);
+    
+    // Add some test balance
+    CasinoBalance.updateBalance(100);
+    console.log('Added 100 to balance. New balance:', CasinoBalance.getBalance());
+    
+    // Wait a moment for the async save to complete
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Try to fetch balance history for current user
+    try {
+        const { getDocs, collection, query, where, limit } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const q = query(
+            collection(window.firebaseDb, 'balanceHistory'),
+            where('userId', '==', window.casinoAuth.currentUser.uid),
+            limit(10)
+        );
+        const historySnapshot = await getDocs(q);
+        console.log('Found', historySnapshot.size, 'history entries for current user');
+        
+        historySnapshot.forEach(doc => {
+            const data = doc.data();
+            console.log('History entry:', {
+                id: doc.id,
+                balance: data.balance,
+                timestamp: data.timestamp?.toDate?.() || data.timestamp,
+                type: data.type
+            });
+        });
+    } catch (error) {
+        console.error('Error fetching balance history:', error);
+    }
+};
+
 // Show balance history chart
 window.showBalanceHistory = async function(event, userId, userEmail) {
     console.log('showBalanceHistory called for:', userEmail, 'ID:', userId);
@@ -3272,6 +3340,21 @@ window.showBalanceHistory = async function(event, userId, userEmail) {
     }
     
     try {
+        // Check if Firebase is initialized
+        if (!window.firebaseDb) {
+            console.error('Firebase not initialized - balance history unavailable');
+            throw new Error('Firebase not initialized');
+        }
+        
+        // Check if user is authenticated
+        if (!window.firebaseAuth || !window.firebaseAuth.currentUser) {
+            console.error('User not authenticated - balance history unavailable');
+            throw new Error('User not authenticated');
+        }
+        
+        console.log('Current user:', window.firebaseAuth.currentUser.uid);
+        console.log('Firebase database available:', !!window.firebaseDb);
+        
         // Get balance history for user (filter + limit, sort in-memory to avoid index requirement)
         const { getDocs, collection, query, where, limit } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
         const q = query(
@@ -3283,14 +3366,24 @@ window.showBalanceHistory = async function(event, userId, userEmail) {
         const history = [];
         
         console.log('Total history documents found:', historySnapshot.size);
+        console.log('Query details:', { userId, limit: 100 });
         
         historySnapshot.forEach(doc => {
             const data = doc.data();
+            console.log('History entry:', { 
+                id: doc.id, 
+                userId: data.userId, 
+                balance: data.balance, 
+                timestamp: data.timestamp,
+                type: data.type 
+            });
             history.push({
                 balance: data.balance,
                 timestamp: data.timestamp.toDate()
             });
         });
+
+        console.log('Raw history before sorting:', history.map(h => ({ balance: h.balance, timestamp: h.timestamp })));
 
         console.log('Found history entries for', userEmail, ':', history.length);
 
@@ -3378,6 +3471,8 @@ window.showBalanceHistory = async function(event, userId, userEmail) {
             // Sort by timestamp
             filteredHistory.sort((a, b) => a.timestamp - b.timestamp);
 
+            console.log('Filtered history after sorting:', filteredHistory.map(h => ({ balance: h.balance, timestamp: h.timestamp })));
+
             // Prepare data with exact time
             const labels = filteredHistory.map(h => {
                 const date = h.timestamp;
@@ -3386,6 +3481,15 @@ window.showBalanceHistory = async function(event, userId, userEmail) {
             const data = filteredHistory.map(h => h.balance);
 
             console.log('Creating chart with data:', { labels, data });
+            console.log('Filtered history entries:', filteredHistory.length);
+            console.log('Chart data points:', data.length);
+            console.log('Latest balance in chart:', data[data.length - 1]);
+            console.log('Earliest balance in chart:', data[0]);
+
+            // Check if Chart.js is available
+            if (typeof Chart === 'undefined') {
+                throw new Error('Chart.js library not loaded');
+            }
 
             tooltipChart = new Chart(ctx, {
                 type: 'line',
@@ -3441,7 +3545,6 @@ window.showBalanceHistory = async function(event, userId, userEmail) {
                 }
             });
         }
-
     } catch (error) {
         console.error('Error loading balance history:', error);
         const tooltip = document.getElementById('chart-tooltip');
@@ -3450,7 +3553,17 @@ window.showBalanceHistory = async function(event, userId, userEmail) {
         tooltip.classList.remove('hidden');
         
         const chartContainer = document.querySelector('.chart-container');
-        chartContainer.innerHTML = '<div class="no-data-message">Error loading data</div>';
+        let errorMessage = 'Error loading data';
+        
+        if (error.message.includes('Firebase not initialized')) {
+            errorMessage = 'Firebase not available - balance history unavailable';
+        } else if (error.message.includes('User not authenticated')) {
+            errorMessage = 'Please log in to view balance history';
+        } else if (error.message.includes('Chart.js library not loaded')) {
+            errorMessage = 'Chart library not available';
+        }
+        
+        chartContainer.innerHTML = `<div class="no-data-message">${errorMessage}</div>`;
     }
 };
 

@@ -13,19 +13,24 @@ let app, auth, db;
 
 // Initialize Firebase when DOM is loaded
 document.addEventListener('DOMContentLoaded', async () => {
-    // Import Firebase modules from CDN
-    const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
-    const { getAuth } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
-    const { getFirestore } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-    
-    // Initialize Firebase
-    app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-    db = getFirestore(app);
-    
-    // Make auth and db globally available
-    window.firebaseAuth = auth;
-    window.firebaseDb = db;
-    
-    console.log('Firebase initialized successfully');
+    try {
+        // Import Firebase modules from CDN
+        const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
+        const { getAuth } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+        const { getFirestore } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        
+        // Initialize Firebase
+        app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+        
+        // Make auth and db globally available
+        window.firebaseAuth = auth;
+        window.firebaseDb = db;
+        
+        console.log('Firebase initialized successfully');
+    } catch (error) {
+        console.error('Firebase initialization error:', error);
+        // Continue without Firebase for offline functionality
+    }
 });
