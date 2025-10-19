@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Balance History Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            border: 2px solid #FFD700;
+        }
+        button {
+            background: #FFD700;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #FFC000;
+        }
+        .console-output {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success { background: #4CAF50; color: white; }
+        .error { background: #f44336; color: white; }
+        .info { background: #2196F3; color: white; }
+    </style>
+</head>
+<body>
+    <h1>🪙 Balance History Test Suite</h1>
+    
+    <div class="test-section">
+        <h2>Step 1: Clear Cache</h2>
+        <button onclick="clearCache()">Clear Balance History Cache</button>
+        <div id="clear-status" class="status info">Ready to clear cache</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Step 2: Add Test Data</h2>
+        <button onclick="addTestData()">Add 100 to Balance</button>
+        <div id="test-status" class="status info">Ready to add test data</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Step 3: Test Balance History</h2>
+        <button onclick="testBalanceHistory()">Test Balance History Function</button>
+        <div id="history-status" class="status info">Ready to test balance history</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Step 4: Test Graph Display</h2>
+        <button onclick="testGraphDisplay()">Test Graph Display</button>
+        <div id="graph-status" class="status info">Ready to test graph display</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Console Output</h2>
+        <div id="console-output" class="console-output">Console output will appear here...</div>
+        <button onclick="clearConsole()">Clear Console</button>
+    </div>
+
+    <script>
+        // Override console.log to capture output
+        const originalLog = console.log;
+        const originalError = console.error;
+        const consoleOutput = document.getElementById('console-output');
+        
+        function addToConsole(message, type = 'log') {
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : '📝';
+            consoleOutput.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToConsole(args.join(' '), 'log');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToConsole(args.join(' '), 'error');
+        };
+        
+        function clearConsole() {
+            consoleOutput.textContent = 'Console output cleared...\n';
+        }
+        
+        function updateStatus(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `status ${type}`;
+        }
+        
+        async function clearCache() {
+            try {
+                updateStatus('clear-status', 'Clearing cache...', 'info');
+                
+                if (typeof window.refreshBalanceHistory === 'function') {
+                    await window.refreshBalanceHistory();
+                    updateStatus('clear-status', 'Cache cleared successfully!', 'success');
+                } else {
+                    updateStatus('clear-status', 'refreshBalanceHistory function not found', 'error');
+                }
+            } catch (error) {
+                updateStatus('clear-status', `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function addTestData() {
+            try {
+                updateStatus('test-status', 'Adding test data...', 'info');
+                
+                if (typeof window.testBalanceHistory === 'function') {
+                    await window.testBalanceHistory();
+                    updateStatus('test-status', 'Test data added successfully!', 'success');
+                } else {
+                    updateStatus('test-status', 'testBalanceHistory function not found', 'error');
+                }
+            } catch (error) {
+                updateStatus('test-status', `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testBalanceHistory() {
+            try {
+                updateStatus('history-status', 'Testing balance history...', 'info');
+                
+                if (typeof window.testBalanceHistory === 'function') {
+                    await window.testBalanceHistory();
+                    updateStatus('history-status', 'Balance history test completed!', 'success');
+                } else {
+                    updateStatus('history-status', 'testBalanceHistory function not found', 'error');
+                }
+            } catch (error) {
+                updateStatus('history-status', `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testGraphDisplay() {
+            try {
+                updateStatus('graph-status', 'Testing graph display...', 'info');
+                
+                // Check if we're on the main page
+                if (window.location.href.includes('home.html')) {
+                    updateStatus('graph-status', 'On home page - hover over a player to test graph', 'info');
+                } else {
+                    updateStatus('graph-status', 'Please navigate to home.html to test graph display', 'error');
+                }
+            } catch (error) {
+                updateStatus('graph-status', `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Auto-run initial tests
+        window.addEventListener('load', () => {
+            console.log('Balance History Test Suite loaded');
+            console.log('Current URL:', window.location.href);
+            console.log('Available functions:', {
+                refreshBalanceHistory: typeof window.refreshBalanceHistory,
+                testBalanceHistory: typeof window.testBalanceHistory,
+                showBalanceHistory: typeof window.showBalanceHistory
+            });
+        });
+    </script>
+</body>
+</html>

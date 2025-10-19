@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plinko - The Parthenon Casino</title>
+    <script>
+        // Check if the page was refreshed
+        if (performance.navigation.type === performance.navigation.TYPE_RELOAD) {
+            window.location.replace('home.html');
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="game-pages.css">
+</head>
+<body>
+    <div class="coin-tab">
+        <span class="coin-icon">🪙</span>
+        <span class="coin-balance">0</span>
+    </div>
+
+    <div class="game-page-container" style="position:relative;">
+        <header class="game-header">
+            <a href="home.html" class="back-button">← Back to Games</a>
+            <h1>Plinko</h1>
+            <div class="balance-container">
+                <span class="balance-label">Balance:</span>
+                <span class="balance-amount">0</span>
+                <span class="currency">🪙</span>
+            </div>
+        </header>
+
+        <main class="game-content">
+            <div class="plinko-layout">
+                <aside class="plinko-sidebar">
+                    <div class="sidebar-section">
+                        <div class="sidebar-tabs">
+                            <button class="sidebar-tab active" data-mode="manual">Manual</button>
+                            <button class="sidebar-tab" data-mode="auto">Auto</button>
+                        </div>
+                        <div class="sidebar-field">
+                            <label for="sidebar-bet-amount">Bet Amount</label>
+                            <div class="sidebar-bet-input-group">
+                                <input id="sidebar-bet-amount" type="number" min="1" step="1" value="10">
+                                <button type="button" class="sidebar-bet-mult">2×</button>
+                                <button type="button" class="sidebar-bet-max">Max</button>
+                            </div>
+                        </div>
+                        <button class="sidebar-bet-btn">Bet</button>
+                        <div id="winnings-container" class="auto-winnings" style="display:none;">
+                            <div class="winnings-row">
+                                <span class="winnings-label">Spent:</span>
+                                <span id="amount-spent" class="amount-spent">0</span>
+                                <span class="currency">🪙</span>
+                            </div>
+                            <div class="winnings-row">
+                                <span class="winnings-label">Won:</span>
+                                <span id="amount-won" class="amount-won">0</span>
+                                <span class="currency">🪙</span>
+                            </div>
+                            <div class="winnings-row">
+                                <span class="winnings-label">Net:</span>
+                                <span id="net-win" class="net-win">0</span>
+                                <span class="currency">🪙</span>
+                            </div>
+                        </div>
+                        <div id="last-auto-net" class="last-auto-net" style="display:none;">
+                            <span class="last-auto-label">Last Auto net amount:</span>
+                            <span id="last-auto-amount" class="last-auto-amount">N/A</span>
+                        </div>
+                    </div>
+                </aside>
+                <div class="plinko-main">
+                    <div class="game-container">
+                        <div class="plinko-table">
+                            <h2>Plinko</h2>
+                            <div class="plinko-container">
+                                <div id="plinko-top-notification" class="plinko-top-notification" style="display: none;"></div>
+                                <canvas id="plinko-canvas" width="600" height="650"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="plinko-notification-stack"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="notification" style="display:none;"></div>
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+    
+    <!-- Firebase Configuration -->
+    <script src="firebase-config.js"></script>
+    
+    <!-- Main Application Script -->
+    <script src="script.js"></script>
+</body>
+</html> 

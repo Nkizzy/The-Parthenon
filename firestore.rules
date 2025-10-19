@@ -1,0 +1,26 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users can read all user documents for leaderboard
+    // Admin (noah@nick.com) can write to any user document
+    // Regular users can only write to their own document
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && (
+        request.auth.uid == userId || 
+        request.auth.token.email == 'noah@nick.com'
+      );
+    }
+    
+    // Balance history rules
+    // Admin can write to any balance history
+    // Regular users can only write to their own balance history
+    match /balanceHistory/{historyId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && (
+        request.auth.uid == request.resource.data.userId ||
+        request.auth.token.email == 'noah@nick.com'
+      );
+    }
+  }
+}
