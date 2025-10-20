@@ -1769,6 +1769,25 @@ class PlinkoGame {
             };
         }
 
+        // Prevent navigation when balls are dropping
+        const backButton = document.querySelector('.back-button');
+        if (backButton) {
+            backButton.addEventListener('click', (e) => {
+                // Check if there are balls currently dropping (any mode)
+                if (this.balls.length > 0) {
+                    e.preventDefault();
+                    this.showTopNotification('Please wait for all balls to land before leaving', 4000);
+                    return false;
+                }
+                // Check if auto mode is running (even if no balls currently)
+                if (this.isAutoMode && this.autoInterval) {
+                    e.preventDefault();
+                    this.showTopNotification('Please wait for all balls to land before leaving', 4000);
+                    return false;
+                }
+            });
+        }
+
         // Sidebar 2x button event
         if (this.betMultBtn) {
             this.betMultBtn.style.cursor = 'pointer';
@@ -1804,6 +1823,12 @@ class PlinkoGame {
             return;
         }
         
+        // Prevent switching to manual mode if there are balls dropping in auto mode
+        if (mode === 'manual' && this.isAutoMode && this.balls.length > 0) {
+            this.showTopNotification('Please wait for all balls to land before switching', 4000);
+            return;
+        }
+        
         this.isAutoMode = mode === 'auto';
         if (this.manualTab && this.autoTab) {
             this.manualTab.classList.toggle('active', !this.isAutoMode);
@@ -1832,6 +1857,9 @@ class PlinkoGame {
         
         // Update auto tab disabled state
         this.updateAutoTabDisabledState();
+        
+        // Update manual tab disabled state
+        this.updateManualTabDisabledState();
     }
 
     updateAutoTabDisabledState() {
@@ -1841,6 +1869,17 @@ class PlinkoGame {
                 this.autoTab.classList.add('disabled');
             } else {
                 this.autoTab.classList.remove('disabled');
+            }
+        }
+    }
+
+    updateManualTabDisabledState() {
+        if (this.manualTab) {
+            // Disable manual tab if we're in auto mode and have balls dropping
+            if (this.isAutoMode && this.balls.length > 0) {
+                this.manualTab.classList.add('disabled');
+            } else {
+                this.manualTab.classList.remove('disabled');
             }
         }
     }
@@ -1861,6 +1900,9 @@ class PlinkoGame {
             // Cancel any auto-resume intentions
             this.autoPausedForFunds = false;
             this.shouldResumeAfterPayout = false;
+            
+            // Update manual tab disabled state when auto stops
+            this.updateManualTabDisabledState();
         } else {
             const betInput = document.getElementById('sidebar-bet-amount');
             let betValue = parseInt(betInput.value, 10);
@@ -1874,6 +1916,9 @@ class PlinkoGame {
                 // Drop 1 ball per interval
                 // Get fresh balance before checking
                 this.balance = CasinoBalance.getBalance();
+                
+                // Update manual tab disabled state when auto starts
+                this.updateManualTabDisabledState();
                 
                 if (this.balance >= this.bet) {
                     this.dropBall();
@@ -2333,6 +2378,9 @@ class PlinkoGame {
             // Add any accumulated winnings to balance
             this.addWinningsToBalance();
             
+            // Update manual tab disabled state when balls finish in auto mode
+            this.updateManualTabDisabledState();
+            
             // Check if we should resume auto dropping or stop
             if (this.autoPausedForFunds || this.pendingAutoPayout) {
                 this.pendingAutoPayout = false;
@@ -2613,7 +2661,6 @@ class MinesGame {
         this.fadeInProgress = 0;
         this.bet = 10;
         this.balance = CasinoBalance.getBalance();
-        this.isAutoMode = false;
         this.autoInterval = null;
         
         // Multiplier table for different diamonds cleared and mines
@@ -2730,8 +2777,6 @@ class MinesGame {
         this.minesInput = document.getElementById('sidebar-mines-count');
         this.minesMinusBtn = document.querySelector('.sidebar-mines-minus');
         this.minesPlusBtn = document.querySelector('.sidebar-mines-plus');
-        this.manualTab = document.querySelector('.sidebar-tab[data-mode="manual"]');
-        this.autoTab = document.querySelector('.sidebar-tab[data-mode="auto"]');
         
         this.initControls();
         this.updateBalance();
@@ -2809,19 +2854,6 @@ class MinesGame {
 
         // Mines input
         this.initMinesInput();
-
-        // Tab switching
-        this.manualTab.addEventListener('click', () => {
-            this.setMode('manual');
-        });
-
-        // Disable Auto tab
-        this.autoTab.classList.add('disabled');
-        this.autoTab.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            return false;
-        });
 
         // Canvas click handler
         this.canvas.addEventListener('click', (e) => {
@@ -2916,21 +2948,6 @@ class MinesGame {
         this.minesMinusBtn.classList.add('bet-disabled');
         this.minesPlusBtn.classList.add('bet-disabled');
         this.minesInput.classList.add('bet-disabled');
-    }
-
-    setMode(mode) {
-        this.isAutoMode = mode === 'auto';
-        
-        // Update tab appearance
-        this.manualTab.classList.toggle('active', mode === 'manual');
-        this.autoTab.classList.toggle('active', mode === 'auto');
-        
-        // Update button text
-        if (mode === 'auto') {
-            this.betBtn.textContent = 'Start Auto';
-        } else {
-            this.betBtn.textContent = 'Start Game';
-        }
     }
 
     updateMultiplier() {
@@ -3278,6 +3295,9 @@ class MinesGame {
     drawCell(row, col) {
         const x = this.gridOffsetX + col * this.cellSize;
         const y = this.gridOffsetY + row * this.cellSize;
+        const cellWidth = this.cellSize - 4;
+        const cellHeight = this.cellSize - 4;
+        const radius = 6; // Slightly rounded edges
         
         // Cell background with subtle gradient
         const cellGradient = this.ctx.createLinearGradient(x, y, x + this.cellSize, y + this.cellSize);
@@ -3285,24 +3305,44 @@ class MinesGame {
         cellGradient.addColorStop(1, '#1e252f');
         
         this.ctx.fillStyle = cellGradient;
-        this.ctx.fillRect(x + 2, y + 2, this.cellSize - 4, this.cellSize - 4);
+        this.drawRoundedRect(x + 2, y + 2, cellWidth, cellHeight, radius);
+        this.ctx.fill();
         
         // Cell border
         this.ctx.strokeStyle = '#FFD700';
         this.ctx.lineWidth = 1;
-        this.ctx.strokeRect(x + 2, y + 2, this.cellSize - 4, this.cellSize - 4);
+        this.drawRoundedRect(x + 2, y + 2, cellWidth, cellHeight, radius);
+        this.ctx.stroke();
         
         // Inner highlight
         this.ctx.strokeStyle = '#FFD700';
         this.ctx.lineWidth = 0.5;
         this.ctx.globalAlpha = 0.3;
-        this.ctx.strokeRect(x + 4, y + 4, this.cellSize - 8, this.cellSize - 8);
+        this.drawRoundedRect(x + 4, y + 4, cellWidth - 4, cellHeight - 4, radius - 1);
+        this.ctx.stroke();
         this.ctx.globalAlpha = 1;
+    }
+
+    drawRoundedRect(x, y, width, height, radius) {
+        this.ctx.beginPath();
+        this.ctx.moveTo(x + radius, y);
+        this.ctx.lineTo(x + width - radius, y);
+        this.ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+        this.ctx.lineTo(x + width, y + height - radius);
+        this.ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+        this.ctx.lineTo(x + radius, y + height);
+        this.ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+        this.ctx.lineTo(x, y + radius);
+        this.ctx.quadraticCurveTo(x, y, x + radius, y);
+        this.ctx.closePath();
     }
 
     drawRevealedCell(row, col) {
         const x = this.gridOffsetX + col * this.cellSize;
         const y = this.gridOffsetY + row * this.cellSize;
+        const cellWidth = this.cellSize - 4;
+        const cellHeight = this.cellSize - 4;
+        const radius = 6; // Same radius as regular cells
         
         // Draw revealed cell background (dimmer gold)
         const revealedGradient = this.ctx.createLinearGradient(x, y, x + this.cellSize, y + this.cellSize);
@@ -3310,12 +3350,14 @@ class MinesGame {
         revealedGradient.addColorStop(1, '#6B4F0A');
         
         this.ctx.fillStyle = revealedGradient;
-        this.ctx.fillRect(x + 2, y + 2, this.cellSize - 4, this.cellSize - 4);
+        this.drawRoundedRect(x + 2, y + 2, cellWidth, cellHeight, radius);
+        this.ctx.fill();
         
         // Draw thicker outline for revealed tile
         this.ctx.strokeStyle = '#FFD700';
         this.ctx.lineWidth = 3;
-        this.ctx.strokeRect(x + 2, y + 2, this.cellSize - 4, this.cellSize - 4);
+        this.drawRoundedRect(x + 2, y + 2, cellWidth, cellHeight, radius);
+        this.ctx.stroke();
         
         // Draw drachma coin (same as balance indicator)
         const centerX = x + this.cellSize / 2;
