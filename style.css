@@ -48,24 +48,28 @@ h1 {
 }
 
 .balance-container {
-    background: rgba(44, 62, 80, 0.9);
-    padding: 0.5rem 1rem;
+    background: url('images/balancetab.png') no-repeat center center;
+    background-size: 110%;
+    padding: 1rem 1rem;
     border-radius: 10px;
-    border: 2px solid var(--primary-color);
     display: flex;
     align-items: center;
-    gap: 0.3rem;
+    justify-content: center;
+    gap: 1rem;
+    min-width: 500px;
 }
 
 .balance-label {
     font-size: 1.2rem;
     margin-right: 0.8rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
 }
 
 .balance-amount {
     font-size: 1.5rem;
     font-weight: bold;
     color: var(--primary-color);
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
 }
 
 .currency {
@@ -73,6 +77,7 @@ h1 {
     font-size: 1.2rem;
     margin-left: 0.1rem;
     margin-right: 1rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
 }
 
 .game-container {
@@ -359,6 +364,7 @@ button:disabled {
     font-family: 'Cinzel', serif;
     font-size: 1rem;
     font-weight: 600;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
 }
 
 .sign-out-btn {
@@ -408,6 +414,7 @@ button:disabled {
     background-position: center;
     background-repeat: no-repeat;
     border: 2px solid #B8860B;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
 }
 
 .account-sidebar {
