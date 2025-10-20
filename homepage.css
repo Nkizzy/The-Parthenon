@@ -40,6 +40,13 @@ html {
     max-width: 1200px;
 }
 
+.balance-container {
+    position: fixed;
+    top: 2.5rem;
+    right: 1rem;
+    padding: 0.5rem 1rem;
+}
+
 .homepage-header h1 {
     font-family: 'Cinzel', serif;
     font-size: 4rem;
@@ -129,55 +136,6 @@ html {
     text-align: center;
 }
 
-.greek-column {
-    position: absolute;
-    width: 100px;
-    height: 100%;
-    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 400"><path d="M50,0 L100,50 L100,350 L50,400 L0,350 L0,50 Z" fill="none" stroke="%23FFD700" stroke-width="2"/></svg>') repeat-y;
-    opacity: 0.1;
-    z-index: 1;
-}
-
-.greek-column.left {
-    left: 0;
-}
-
-.greek-column.right {
-    right: 0;
-    transform: scaleX(-1);
-}
-
-.olive-branch {
-    position: absolute;
-    width: 200px;
-    height: 100px;
-    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100"><path d="M100,50 C150,0 200,50 150,100 C200,150 150,200 100,150 C50,200 0,150 50,100 C0,50 50,0 100,50" fill="none" stroke="%23FFD700" stroke-width="2"/></svg>') no-repeat;
-    opacity: 0.1;
-    z-index: 1;
-}
-
-.olive-branch.top-left {
-    top: 20px;
-    left: 20px;
-}
-
-.olive-branch.top-right {
-    top: 20px;
-    right: 20px;
-    transform: scaleX(-1);
-}
-
-.olive-branch.bottom-left {
-    bottom: 20px;
-    left: 20px;
-    transform: scaleY(-1);
-}
-
-.olive-branch.bottom-right {
-    bottom: 20px;
-    right: 20px;
-    transform: scale(-1, -1);
-}
 
 @media (max-width: 768px) {
     .homepage-header h1 {

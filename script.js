@@ -226,13 +226,86 @@ class CasinoAuth {
             userInfo.className = 'user-info';
             userInfo.innerHTML = `
                 <span class="user-name">${this.currentUser.displayName || this.currentUser.email}</span>
-                <button id="sign-out-btn" class="sign-out-btn">Sign Out</button>
+                <div class="account-menu-container">
+                    <button id="account-menu-btn" class="account-menu-btn">
+                        <div class="account-icon"></div>
+                    </button>
+                </div>
             `;
             balanceContainer.appendChild(userInfo);
             
+            // Create sidebar and append to body (outside of balance container)
+            const accountSidebar = document.createElement('div');
+            accountSidebar.id = 'account-sidebar';
+            accountSidebar.className = 'account-sidebar';
+            accountSidebar.innerHTML = `
+                <div class="account-sidebar-content">
+                    <div class="account-sidebar-header">
+                        <span class="account-sidebar-title">Account</span>
+                        <button id="close-account-menu" class="close-account-menu">×</button>
+                    </div>
+                    <div class="account-sidebar-body">
+                        <div class="account-info">
+                            <div class="account-info-item">
+                                <span class="account-info-label">Email:</span>
+                                <span class="account-info-value">${this.currentUser.email}</span>
+                            </div>
+                            <div class="account-info-item">
+                                <span class="account-info-label">Name:</span>
+                                <span class="account-info-value">${this.currentUser.displayName || 'Not set'}</span>
+                            </div>
+                        </div>
+                        <button id="sign-out-btn" class="sign-out-btn">Sign Out</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(accountSidebar);
+            
+            // Add account menu functionality
+            const accountMenuBtn = document.getElementById('account-menu-btn');
+            const closeAccountMenu = document.getElementById('close-account-menu');
+            
+            accountMenuBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                accountSidebar.classList.toggle('open');
+            });
+            
+            closeAccountMenu.addEventListener('click', (e) => {
+                e.stopPropagation();
+                accountSidebar.classList.remove('open');
+            });
+            
+            // Close sidebar when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!accountSidebar.contains(e.target) && !accountMenuBtn.contains(e.target)) {
+                    accountSidebar.classList.remove('open');
+                }
+            });
+            
             // Add sign out functionality
-            document.getElementById('sign-out-btn').addEventListener('click', () => {
-                this.signOut();
+            document.getElementById('sign-out-btn').addEventListener('click', async () => {
+                // Close the sidebar first
+                const accountSidebar = document.getElementById('account-sidebar');
+                if (accountSidebar) {
+                    accountSidebar.classList.remove('open');
+                }
+                
+                // Check if user is on homepage
+                const isHomepage = window.location.pathname.endsWith('home.html') || 
+                                 window.location.pathname.endsWith('/') || 
+                                 window.location.pathname === '';
+                
+                if (!isHomepage) {
+                    // Sign out first, then redirect
+                    await this.signOut();
+                    // Set flag to show auth popup on homepage
+                    sessionStorage.setItem('showAuthPopupAfterSignout', 'true');
+                    // Redirect to homepage
+                    window.location.href = 'home.html';
+                } else {
+                    // On homepage, just sign out normally
+                    this.signOut();
+                }
             });
         }
         
@@ -1624,7 +1697,12 @@ class PlinkoGame {
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) {
                 this.balance = CasinoBalance.getBalance();
-                this.updateBalance();
+                // Only update UI, don't save to localStorage (avoid overriding R key changes)
+                if (this.balanceElement) {
+                    this.balanceElement.textContent = Math.floor(this.balance);
+                }
+                const coinTab = document.querySelector('.coin-balance');
+                if (coinTab) coinTab.textContent = Math.floor(this.balance);
             }
         });
         
@@ -2277,8 +2355,8 @@ class PlinkoGame {
     showPlinkoResult(slot) {
         let payout = this.payouts[slot] || 0;
         let winAmount = this.bet * payout;
-        // Round to 2 decimal places for display
-        let roundedWinAmount = Math.round(winAmount * 100) / 100;
+        // Round to whole number to match winnings display
+        let roundedWinAmount = Math.floor(winAmount);
         let message = payout > 0 ? `Plinko: You won ${roundedWinAmount}!` : 'Plinko: No win!';
         // Determine color based on slot
         let color = '#fff8e1';
@@ -2488,8 +2566,12 @@ class PlinkoGame {
             this.betBtn.textContent = 'Start';
         }
         
-        // Show notification about stopping
-        this.showNotification('Auto drop stopped - insufficient balance', '#ff4444');
+        // Only show insufficient balance notification if it's actually due to insufficient balance
+        // Don't show it if user manually stopped or if balance is sufficient
+        const currentBalance = CasinoBalance.getBalance();
+        if (currentBalance < this.bet) {
+            this.showNotification('Auto drop stopped - insufficient balance', '#ff4444');
+        }
     }
 
     showSignInPrompt() {
@@ -2659,7 +2741,12 @@ class MinesGame {
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) {
                 this.balance = CasinoBalance.getBalance();
-                this.updateBalance();
+                // Only update UI, don't save to localStorage (avoid overriding R key changes)
+                if (this.balanceElement) {
+                    this.balanceElement.textContent = Math.floor(this.balance);
+                }
+                const coinTab = document.querySelector('.coin-balance');
+                if (coinTab) coinTab.textContent = Math.floor(this.balance);
             }
         });
         
@@ -3465,8 +3552,20 @@ document.addEventListener('keyup', (event) => {
     if (event.key.toLowerCase() === 'r' && rKeyHeld) {
         rKeyHeld = false;
         
-        // Final balance update with Firebase save
-        CasinoBalance.setBalance(rKeyBalance);
+        // Final balance update with Firebase save - bypass the no-change check
+        const previous = parseInt(localStorage.getItem('casinoBalance')) || 0;
+        localStorage.setItem('casinoBalance', rKeyBalance);
+        
+        // Update all balance displays on the page
+        const balanceElements = document.querySelectorAll('.balance-amount, .coin-balance');
+        balanceElements.forEach(element => {
+            element.textContent = Math.floor(rKeyBalance);
+        });
+        
+        // Save to Firebase if user is logged in (always save on R key release)
+        if (window.casinoAuth && window.casinoAuth.isUserLoggedIn()) {
+            window.casinoAuth.saveUserBalance(rKeyBalance);
+        }
         
         console.log('R key released. Final balance saved to Firebase:', rKeyBalance);
     }
@@ -3811,9 +3910,17 @@ class AuthPopup {
         // Check if this is the first visit to homepage
         const hasVisited = sessionStorage.getItem('hasVisitedHomepage');
         
-        if (!hasVisited) {
+        // Check if user was redirected from signout
+        const showAfterSignout = sessionStorage.getItem('showAuthPopupAfterSignout');
+        
+        if (!hasVisited || showAfterSignout) {
             // Mark as visited
             sessionStorage.setItem('hasVisitedHomepage', 'true');
+            
+            // Clear the signout flag
+            if (showAfterSignout) {
+                sessionStorage.removeItem('showAuthPopupAfterSignout');
+            }
             
             // Show popup after a short delay to let page load
             setTimeout(() => {
